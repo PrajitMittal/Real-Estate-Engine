@@ -68,6 +68,8 @@ function reducer(state: EngineState, action: EngineAction): EngineState {
       return { ...state, [action.key]: action.value };
     case 'SET_ERROR':
       return { ...state, error: action.error };
+    case 'SET_OVERRIDES':
+      return { ...state, overrides: { ...state.overrides, ...action.data } };
     case 'LOAD_STATE':
       return { ...action.state };
     case 'RESET':
@@ -113,18 +115,34 @@ export function EngineProvider({ children }: { children: ReactNode }) {
     runRecalculation(state, dispatch);
   }, [state.propertyInput, state.recommendations, state.buildStyle, state.risks]);
 
-  // Auto-recalculate when recommendations or build style changes
-  const prevRecsRef = useRef<typeof state.recommendations | null>(null);
-  const prevStyleRef = useRef<typeof state.buildStyle | null>(null);
+  // Auto-recalculate when recommendations or build style changes (debounced, deep comparison)
+  const prevHashRef = useRef<string>('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const recsChanged = prevRecsRef.current !== state.recommendations;
-    const styleChanged = prevStyleRef.current !== state.buildStyle;
-    prevRecsRef.current = state.recommendations;
-    prevStyleRef.current = state.buildStyle;
-    if ((recsChanged || styleChanged) && state.recommendations.length > 0) {
-      // Run recalculation with CURRENT state (not stale closure)
+    if (state.recommendations.length === 0) return;
+    // Deep-compare relevant fields to avoid infinite loops from reference changes
+    const hash = JSON.stringify({
+      recs: state.recommendations.map(r => ({
+        id: r.id, unitCount: r.unitCount, avgSqftPerUnit: r.avgSqftPerUnit,
+        adr: r.adr, targetOccupancy: r.targetOccupancy, retainOrSell: r.retainOrSell,
+        constructionCostPerSqft: r.constructionCostPerSqft, buildStyle: r.buildStyle,
+        productType: r.productType,
+      })),
+      style: state.buildStyle,
+      area: state.propertyInput.areaSqft,
+      landCost: state.propertyInput.totalLandCost,
+      tier: state.propertyInput.locationTier,
+    });
+    if (hash === prevHashRef.current) return;
+    prevHashRef.current = hash;
+
+    // Debounce to prevent rapid cascading recalculations
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
       runRecalculation(state, dispatch);
-    }
+    }, 300);
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [state.recommendations, state.buildStyle, state.propertyInput, state.risks]);
 
   const calculateDebt = useCallback((ltvRatio: number, interestRate: number, tenureYears: number) => {

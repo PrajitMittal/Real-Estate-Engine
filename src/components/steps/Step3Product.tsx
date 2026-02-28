@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useEngine } from '@/hooks/useEngine';
-import { PRODUCT_CATALOG, formatINR } from '@/lib/constants';
+import { PRODUCT_CATALOG, DEFAULT_ROOM_TYPES, formatINR } from '@/lib/constants';
 import { generateProductRecommendations } from '@/lib/ai';
-import type { ProductRecommendation, ZoProductType, BuildStyle } from '@/lib/types';
+import type { ProductRecommendation, ZoProductType, BuildStyle, RoomTypeConfig } from '@/lib/types';
 
 export default function Step3Product() {
   const { state, dispatch, recalculate } = useEngine();
   const products = state.recommendations;
+  const [expandedRoomTypes, setExpandedRoomTypes] = useState<Record<number, boolean>>({});
 
   const runRecommendation = async () => {
     if (!state.marketResearch) return;
@@ -46,6 +48,8 @@ export default function Step3Product() {
 
   const totalSqft = products.reduce((s, p) => s + p.totalSqft, 0);
   const availableSqft = state.propertyInput.existingSqftBuiltUp || state.propertyInput.areaSqft || 0;
+  const isOverAllocated = availableSqft > 0 && totalSqft > availableSqft;
+  const utilizationPercent = Math.round((totalSqft / (availableSqft || 1)) * 100);
 
   if (state.isLoadingRecommendations) {
     return (
@@ -96,15 +100,22 @@ export default function Step3Product() {
       </div>
 
       {/* Utilization Bar */}
-      <div className="glass-card p-4">
-        <div className="flex justify-between text-xs text-muted-foreground mb-2">
-          <span>Area Utilization</span>
-          <span>{Math.round((totalSqft / (availableSqft || 1)) * 100)}%</span>
+      <div className={`glass-card p-4 ${isOverAllocated ? 'border border-rose/50' : ''}`}>
+        <div className="flex justify-between text-xs mb-2">
+          <span className="text-muted-foreground">Area Utilization</span>
+          <span className={isOverAllocated ? 'text-rose font-medium' : 'text-muted-foreground'}>
+            {utilizationPercent}%{isOverAllocated ? ' — Over-allocated!' : ''}
+          </span>
         </div>
         <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary to-cyan rounded-full transition-all"
-            style={{ width: `${Math.min(100, (totalSqft / (availableSqft || 1)) * 100)}%` }} />
+          <div className={`h-full rounded-full transition-all ${isOverAllocated ? 'bg-rose' : 'bg-gradient-to-r from-primary to-cyan'}`}
+            style={{ width: `${Math.min(100, utilizationPercent)}%` }} />
         </div>
+        {isOverAllocated && (
+          <p className="text-xs text-rose mt-2">
+            Total product area ({totalSqft.toLocaleString()} sqft) exceeds available area ({availableSqft.toLocaleString()} sqft). Consider reducing units or sqft per unit.
+          </p>
+        )}
       </div>
 
       {/* Product Cards */}
@@ -128,32 +139,150 @@ export default function Step3Product() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Units</label>
-                <input type="number" value={product.unitCount} onChange={e => updateProduct(index, {
-                  unitCount: Number(e.target.value),
-                  totalSqft: Number(e.target.value) * product.avgSqftPerUnit,
-                })}
+                <label className="block text-xs text-muted-foreground mb-1">Units ({catalog?.minUnits}-{catalog?.maxUnits})</label>
+                <input type="number" value={product.unitCount}
+                  min={catalog?.minUnits || 1} max={catalog?.maxUnits || 200}
+                  onChange={e => {
+                    const val = Math.max(1, Number(e.target.value) || 0);
+                    updateProduct(index, { unitCount: val, totalSqft: val * product.avgSqftPerUnit });
+                  }}
                   className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Sqft / Unit</label>
-                <input type="number" value={product.avgSqftPerUnit} onChange={e => updateProduct(index, {
-                  avgSqftPerUnit: Number(e.target.value),
-                  totalSqft: product.unitCount * Number(e.target.value),
-                })}
+                <input type="number" value={product.avgSqftPerUnit} min={10}
+                  onChange={e => {
+                    const val = Math.max(10, Number(e.target.value) || 0);
+                    updateProduct(index, { avgSqftPerUnit: val, totalSqft: product.unitCount * val });
+                  }}
                   className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">ADR (INR)</label>
-                <input type="number" value={product.adr} onChange={e => updateProduct(index, { adr: Number(e.target.value) })}
+                <input type="number" value={product.adr} min={0}
+                  onChange={e => updateProduct(index, { adr: Math.max(0, Number(e.target.value) || 0) })}
                   className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Occupancy %</label>
-                <input type="number" value={product.targetOccupancy} onChange={e => updateProduct(index, { targetOccupancy: Number(e.target.value) })}
+                <input type="number" value={product.targetOccupancy} min={5} max={100}
+                  onChange={e => updateProduct(index, { targetOccupancy: Math.min(100, Math.max(5, Number(e.target.value) || 0)) })}
                   className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
             </div>
+
+            {/* Room Types */}
+            {DEFAULT_ROOM_TYPES[product.productType] && (
+              <div className="border border-border/50 rounded-lg overflow-hidden">
+                <button onClick={() => setExpandedRoomTypes(prev => ({ ...prev, [index]: !prev[index] }))}
+                  className="w-full flex items-center justify-between px-4 py-2 bg-secondary/30 text-sm hover:bg-secondary/50 transition">
+                  <span className="font-medium text-muted-foreground">Room Types ({product.roomTypes?.length || DEFAULT_ROOM_TYPES[product.productType]!.length})</span>
+                  <span className="text-xs text-primary">{expandedRoomTypes[index] ? 'Collapse' : 'Expand'}</span>
+                </button>
+                {expandedRoomTypes[index] && (() => {
+                  const roomTypes = product.roomTypes || DEFAULT_ROOM_TYPES[product.productType]!;
+                  // Initialize room types on first expand if not set
+                  if (!product.roomTypes) {
+                    updateProduct(index, { roomTypes: [...DEFAULT_ROOM_TYPES[product.productType]!] });
+                  }
+                  return (
+                    <div className="p-4 space-y-3">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground border-b border-border">
+                            <th className="text-left py-1 pr-2">Room Type</th>
+                            <th className="text-right py-1 px-2">Count</th>
+                            <th className="text-right py-1 px-2">Sqft</th>
+                            <th className="text-right py-1 px-2">ADR</th>
+                            <th className="text-right py-1 px-2">Occ %</th>
+                            <th className="text-right py-1 pl-2 w-8"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {roomTypes.map((rt, ri) => (
+                            <tr key={ri} className="border-b border-border/30">
+                              <td className="py-1.5 pr-2">
+                                <input value={rt.name} onChange={e => {
+                                  const updated = [...roomTypes];
+                                  updated[ri] = { ...updated[ri], name: e.target.value };
+                                  const totalUnits = updated.reduce((s, r) => s + r.count, 0);
+                                  const weightedADR = Math.round(updated.reduce((s, r) => s + r.adr * r.count, 0) / (totalUnits || 1));
+                                  const weightedOcc = Math.round(updated.reduce((s, r) => s + r.occupancy * r.count, 0) / (totalUnits || 1));
+                                  updateProduct(index, { roomTypes: updated, unitCount: totalUnits, adr: weightedADR, targetOccupancy: weightedOcc });
+                                }}
+                                  className="w-full bg-input border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary" />
+                              </td>
+                              <td className="py-1.5 px-2">
+                                <input type="number" value={rt.count} min={0} onChange={e => {
+                                  const updated = [...roomTypes];
+                                  updated[ri] = { ...updated[ri], count: Math.max(0, Number(e.target.value) || 0) };
+                                  const totalUnits = updated.reduce((s, r) => s + r.count, 0);
+                                  const weightedADR = Math.round(updated.reduce((s, r) => s + r.adr * r.count, 0) / (totalUnits || 1));
+                                  const weightedOcc = Math.round(updated.reduce((s, r) => s + r.occupancy * r.count, 0) / (totalUnits || 1));
+                                  const avgSqft = Math.round(updated.reduce((s, r) => s + r.sqftPerUnit * r.count, 0) / (totalUnits || 1));
+                                  updateProduct(index, { roomTypes: updated, unitCount: totalUnits, adr: weightedADR, targetOccupancy: weightedOcc, avgSqftPerUnit: avgSqft, totalSqft: totalUnits * avgSqft });
+                                }}
+                                  className="w-full bg-input border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary" />
+                              </td>
+                              <td className="py-1.5 px-2">
+                                <input type="number" value={rt.sqftPerUnit} min={10} onChange={e => {
+                                  const updated = [...roomTypes];
+                                  updated[ri] = { ...updated[ri], sqftPerUnit: Math.max(10, Number(e.target.value) || 0) };
+                                  const totalUnits = updated.reduce((s, r) => s + r.count, 0);
+                                  const avgSqft = Math.round(updated.reduce((s, r) => s + r.sqftPerUnit * r.count, 0) / (totalUnits || 1));
+                                  updateProduct(index, { roomTypes: updated, avgSqftPerUnit: avgSqft, totalSqft: totalUnits * avgSqft });
+                                }}
+                                  className="w-full bg-input border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary" />
+                              </td>
+                              <td className="py-1.5 px-2">
+                                <input type="number" value={rt.adr} min={0} onChange={e => {
+                                  const updated = [...roomTypes];
+                                  updated[ri] = { ...updated[ri], adr: Math.max(0, Number(e.target.value) || 0) };
+                                  const totalUnits = updated.reduce((s, r) => s + r.count, 0);
+                                  const weightedADR = Math.round(updated.reduce((s, r) => s + r.adr * r.count, 0) / (totalUnits || 1));
+                                  updateProduct(index, { roomTypes: updated, adr: weightedADR });
+                                }}
+                                  className="w-full bg-input border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary" />
+                              </td>
+                              <td className="py-1.5 px-2">
+                                <input type="number" value={rt.occupancy} min={5} max={100} onChange={e => {
+                                  const updated = [...roomTypes];
+                                  updated[ri] = { ...updated[ri], occupancy: Math.min(100, Math.max(5, Number(e.target.value) || 0)) };
+                                  const totalUnits = updated.reduce((s, r) => s + r.count, 0);
+                                  const weightedOcc = Math.round(updated.reduce((s, r) => s + r.occupancy * r.count, 0) / (totalUnits || 1));
+                                  updateProduct(index, { roomTypes: updated, targetOccupancy: weightedOcc });
+                                }}
+                                  className="w-full bg-input border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-primary" />
+                              </td>
+                              <td className="py-1.5 pl-2 text-center">
+                                {roomTypes.length > 1 && (
+                                  <button onClick={() => {
+                                    const updated = roomTypes.filter((_, j) => j !== ri);
+                                    const totalUnits = updated.reduce((s, r) => s + r.count, 0);
+                                    const weightedADR = Math.round(updated.reduce((s, r) => s + r.adr * r.count, 0) / (totalUnits || 1));
+                                    const weightedOcc = Math.round(updated.reduce((s, r) => s + r.occupancy * r.count, 0) / (totalUnits || 1));
+                                    const avgSqft = Math.round(updated.reduce((s, r) => s + r.sqftPerUnit * r.count, 0) / (totalUnits || 1));
+                                    updateProduct(index, { roomTypes: updated, unitCount: totalUnits, adr: weightedADR, targetOccupancy: weightedOcc, avgSqftPerUnit: avgSqft, totalSqft: totalUnits * avgSqft });
+                                  }}
+                                    className="text-destructive hover:underline">×</button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button onClick={() => {
+                        const updated = [...roomTypes, { name: 'New Room', count: 1, sqftPerUnit: 150, adr: 1000, occupancy: 60 }];
+                        updateProduct(index, { roomTypes: updated });
+                      }}
+                        className="px-3 py-1 rounded bg-secondary text-xs hover:bg-secondary/80 transition">
+                        + Add Room Type
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-xs text-muted-foreground">

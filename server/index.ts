@@ -82,6 +82,63 @@ app.post('/api/render', async (req, res) => {
   }
 });
 
+// Photo analysis via GPT-4o Vision
+app.post('/api/analyze-photos', async (req, res) => {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return res.status(500).json({ error: 'OPENAI_API_KEY not set' });
+
+  try {
+    const { photos, propertyContext } = req.body;
+    if (!photos || !Array.isArray(photos) || photos.length === 0) {
+      return res.status(400).json({ error: 'At least one photo is required' });
+    }
+
+    const imageContent = photos.slice(0, 5).map((photo: string) => ({
+      type: 'image_url' as const,
+      image_url: { url: photo, detail: 'low' as const },
+    }));
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Analyze these property photos for a real estate development project. ${propertyContext || ''}
+
+Describe in 2-3 sentences:
+1. The architectural style, materials, and scale of existing structures (if any)
+2. The surrounding environment, vegetation, and terrain
+3. The overall condition and development potential
+
+Be concise and factual. This description will be used to generate accurate architectural renders.`,
+              },
+              ...imageContent,
+            ],
+          },
+        ],
+        max_tokens: 300,
+      }),
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const description = data.choices?.[0]?.message?.content || '';
+    res.json({ description });
+  } catch (err) {
+    console.error('Photo analysis error:', err);
+    res.status(500).json({ error: 'Photo analysis failed' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Zo Engine API server running on port ${PORT}`);
   console.log(`OpenRouter: ${process.env.OPENROUTER_API_KEY ? '✓' : '✗'}`);

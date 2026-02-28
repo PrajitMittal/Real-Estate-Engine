@@ -81,15 +81,15 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      {/* Main Content — extra bottom padding for fixed footer */}
+      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
         <div className="animate-in" key={state.currentStep}>
           {renderStep()}
         </div>
       </main>
 
       {/* Footer Navigation */}
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-border bg-white/90 backdrop-blur-md">
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border bg-white/90 backdrop-blur-md z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           <button
             onClick={() => dispatch({ type: 'SET_STEP', step: Math.max(1, state.currentStep - 1) })}

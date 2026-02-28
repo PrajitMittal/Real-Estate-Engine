@@ -6,35 +6,71 @@ import type {
   PropertyInput, ProductRecommendation, CapexBreakdown, AnnualRevenue,
   FinancialProjection, ScenarioResult, ScenarioAnalysis, DebtScenario,
   SaleLeasebackModel, ViabilityAssessment, ViabilityRating, BuildStyle,
-  LocationTier, RiskAssessment,
+  LocationTier, RiskAssessment, OpExBreakdown,
 } from './types';
 import {
   PRODUCT_CATALOG, SEASONALITY, OCCUPANCY_RAMPUP,
   APPROVAL_COST_PERCENT, INTERIOR_COST_PERCENT, LANDSCAPING_PERCENT,
   WORKING_CAPITAL_PERCENT, CONTINGENCY_PERCENT,
   ADR_GROWTH_RATE, OPEX_INFLATION, DISCOUNT_RATE,
+  OPEX_BREAKDOWN,
 } from './constants';
 
-// ─── IRR (Newton-Raphson) ────────────────────────────────────
+// ─── IRR (Newton-Raphson with bisection fallback) ────────────
+function npvAtRate(cashflows: number[], rate: number): number {
+  return cashflows.reduce((sum, cf, t) => sum + cf / Math.pow(1 + rate, t), 0);
+}
+
 export function calculateIRR(cashflows: number[]): number {
+  if (cashflows.length < 2) return 0;
+  // Check if project ever has positive cashflows
+  const hasPositive = cashflows.some((cf, i) => i > 0 && cf > 0);
+  if (!hasPositive) return -100; // No positive cashflows = total loss
+
+  // Newton-Raphson attempt
   let rate = 0.1;
+  let converged = false;
   for (let i = 0; i < 200; i++) {
     let npv = 0;
     let dnpv = 0;
     for (let t = 0; t < cashflows.length; t++) {
       const factor = Math.pow(1 + rate, t);
+      if (!isFinite(factor) || factor === 0) break;
       npv += cashflows[t] / factor;
       if (t > 0) dnpv -= (t * cashflows[t]) / Math.pow(1 + rate, t + 1);
     }
-    if (Math.abs(npv) < 1e-7) break;
-    if (Math.abs(dnpv) < 1e-10) break;
+    if (Math.abs(npv) < 1e-7) { converged = true; break; }
+    if (Math.abs(dnpv) < 1e-10) break; // Flat derivative, switch to bisection
     const newRate = rate - npv / dnpv;
-    if (Math.abs(newRate - rate) < 1e-7) break;
+    if (Math.abs(newRate - rate) < 1e-7) { converged = true; break; }
     rate = newRate;
     if (rate < -0.99) rate = -0.5;
     if (rate > 10) rate = 5;
+    if (!isFinite(rate)) break;
   }
-  return rate * 100; // return as percentage
+
+  if (converged && isFinite(rate)) return Math.round(rate * 10000) / 100;
+
+  // Bisection fallback — find sign change between -50% and 500%
+  let lo = -0.5, hi = 5.0;
+  const loNpv = npvAtRate(cashflows, lo);
+  const hiNpv = npvAtRate(cashflows, hi);
+  if (loNpv * hiNpv > 0) {
+    // No sign change found — return best guess
+    return Math.abs(loNpv) < Math.abs(hiNpv)
+      ? Math.round(lo * 10000) / 100
+      : Math.round(hi * 10000) / 100;
+  }
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    const midNpv = npvAtRate(cashflows, mid);
+    if (Math.abs(midNpv) < 1e-7 || (hi - lo) < 1e-8) {
+      return Math.round(mid * 10000) / 100;
+    }
+    if (midNpv * loNpv < 0) hi = mid;
+    else lo = mid;
+  }
+  return Math.round(((lo + hi) / 2) * 10000) / 100;
 }
 
 // ─── NPV ─────────────────────────────────────────────────────
@@ -151,13 +187,17 @@ export function buildAnnualRevenue(
         const monthlyOccupancy = Math.min(baseOccupancy * monthMult, 1);
         annualEvents += monthlyOccupancy * 30; // ~30 days per month
       }
-      eventRevenue += adjustedADR * annualEvents * product.unitCount;
-      fnbRevenue += eventRevenue * catalog.fnbRevenueRatio;
+      const thisEventRevenue = adjustedADR * annualEvents * product.unitCount;
+      eventRevenue += thisEventRevenue;
+      // F&B is a percentage of this product's event revenue (not cumulative)
+      fnbRevenue += thisEventRevenue * catalog.fnbRevenueRatio;
     } else if (product.productType === 'coworking') {
       // Co-working: seats × daily rate × occupancy × working days
       const workingDays = 300;
-      coworkingRevenue += adjustedADR * baseOccupancy * workingDays * product.unitCount;
-      fnbRevenue += coworkingRevenue * catalog.fnbRevenueRatio;
+      const thisCoworkRevenue = adjustedADR * baseOccupancy * workingDays * product.unitCount;
+      coworkingRevenue += thisCoworkRevenue;
+      // F&B is a percentage of this product's coworking revenue (not cumulative)
+      fnbRevenue += thisCoworkRevenue * catalog.fnbRevenueRatio;
     } else if (product.productType === 'restaurant_bar') {
       // Restaurant: daily revenue × days
       const avgCovers = 365;
@@ -200,8 +240,12 @@ export function buildProjection(
   for (let year = 1; year <= years; year++) {
     const revenue = buildAnnualRevenue(products, locationTier, year, adrMultiplier, occupancyMultiplier);
 
-    // OpEx: weighted by product mix
-    let totalOpex = 0;
+    // OpEx: weighted by product mix, broken down by category
+    const opexBreakdown: OpExBreakdown = {
+      staffSalaries: 0, utilities: 0, maintenance: 0, marketing: 0,
+      insurance: 0, propertyTax: 0, consumables: 0, technology: 0,
+      miscellaneous: 0, totalOpex: 0,
+    };
     let totalCommission = 0;
     const opexInflation = Math.pow(1 + OPEX_INFLATION, year - 1);
 
@@ -216,11 +260,32 @@ export function buildProjection(
         : 0;
 
       const productRevenue = revenue.totalRevenue * productRevShare;
-      totalOpex += productRevenue * catalog.opexRatio * opexInflation;
+      const breakdown = OPEX_BREAKDOWN[product.productType];
+
+      if (breakdown) {
+        opexBreakdown.staffSalaries += productRevenue * breakdown.staffSalaries * opexInflation;
+        opexBreakdown.utilities += productRevenue * breakdown.utilities * opexInflation;
+        opexBreakdown.maintenance += productRevenue * breakdown.maintenance * opexInflation;
+        opexBreakdown.marketing += productRevenue * breakdown.marketing * opexInflation;
+        opexBreakdown.insurance += productRevenue * breakdown.insurance * opexInflation;
+        opexBreakdown.propertyTax += productRevenue * breakdown.propertyTax * opexInflation;
+        opexBreakdown.consumables += productRevenue * breakdown.consumables * opexInflation;
+        opexBreakdown.technology += productRevenue * breakdown.technology * opexInflation;
+        opexBreakdown.miscellaneous += productRevenue * breakdown.miscellaneous * opexInflation;
+      } else {
+        // Fallback: use single ratio spread evenly
+        opexBreakdown.miscellaneous += productRevenue * catalog.opexRatio * opexInflation;
+      }
+
       totalCommission += (revenue.hospitalityRevenue * productRevShare) * catalog.commission;
     }
 
-    const ebitda = revenue.totalRevenue - totalOpex - totalCommission;
+    opexBreakdown.totalOpex = opexBreakdown.staffSalaries + opexBreakdown.utilities +
+      opexBreakdown.maintenance + opexBreakdown.marketing + opexBreakdown.insurance +
+      opexBreakdown.propertyTax + opexBreakdown.consumables + opexBreakdown.technology +
+      opexBreakdown.miscellaneous;
+
+    const ebitda = revenue.totalRevenue - opexBreakdown.totalOpex - totalCommission;
     const netCashflow = ebitda - debtService;
     cumulativeCashflow += netCashflow;
 
@@ -228,7 +293,8 @@ export function buildProjection(
       year,
       revenue,
       totalRevenue: revenue.totalRevenue,
-      opex: totalOpex,
+      opex: opexBreakdown.totalOpex,
+      opexBreakdown,
       zostelCommission: totalCommission,
       ebitda,
       debtService,

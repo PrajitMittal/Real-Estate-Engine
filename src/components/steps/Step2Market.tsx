@@ -166,6 +166,86 @@ export default function Step2Market() {
           <p className="text-sm font-medium mt-1">{market.growthTrend}</p>
         </div>
       </div>
+
+      {/* Demand-Supply Gap */}
+      {market.demandSupplyGap && (
+        <div className="glass-card p-6 space-y-3 border border-amber/30">
+          <h3 className="text-sm font-semibold text-amber uppercase tracking-wider">Demand-Supply Gap</h3>
+          <p className="text-sm leading-relaxed">{market.demandSupplyGap}</p>
+        </div>
+      )}
+
+      {/* Segment Demand */}
+      {market.segmentDemand && market.segmentDemand.length > 0 && (
+        <div className="glass-card p-6 space-y-4">
+          <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Segment Demand Breakdown</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {market.segmentDemand.map((seg, i) => (
+              <div key={i} className="bg-secondary/50 rounded-lg p-3">
+                <p className="font-medium text-sm">{seg.segment}</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-lg font-bold text-primary">{seg.share}%</span>
+                  <span className={`text-xs ${seg.trend === 'growing' ? 'text-emerald' : seg.trend === 'declining' ? 'text-rose' : 'text-muted-foreground'}`}>
+                    {seg.trend}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Alternative Use Cases & Micro Trends */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {market.alternativeUseCases && market.alternativeUseCases.length > 0 && (
+          <div className="glass-card p-6 space-y-3">
+            <h3 className="text-sm font-semibold text-violet uppercase tracking-wider">Alternative Use Cases</h3>
+            {market.alternativeUseCases.map((u, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm">
+                <span className="text-violet mt-0.5">+</span>
+                <span>{u}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {market.microMarketTrends && market.microMarketTrends.length > 0 && (
+          <div className="glass-card p-6 space-y-3">
+            <h3 className="text-sm font-semibold text-cyan uppercase tracking-wider">Micro-Market Trends</h3>
+            {market.microMarketTrends.map((t, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm">
+                <span className="text-cyan mt-0.5">~</span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Comparable Transactions */}
+      {market.comparableTransactions && market.comparableTransactions.length > 0 && (
+        <div className="glass-card p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Comparable Transactions</h3>
+          <div className="space-y-2">
+            {market.comparableTransactions.map((txn, i) => (
+              <div key={i} className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
+                <div>
+                  <p className="text-sm font-medium">{txn.description}</p>
+                  {txn.date && <p className="text-xs text-muted-foreground mt-0.5">{txn.date}</p>}
+                </div>
+                <span className="font-bold text-emerald">{formatINR(txn.pricePerSqft)}/sqft</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Regulatory Notes */}
+      {market.regulatoryNotes && (
+        <div className="glass-card p-6 space-y-3 border border-amber/20 bg-amber/5">
+          <h3 className="text-sm font-semibold text-amber uppercase tracking-wider">Regulatory Notes</h3>
+          <p className="text-sm leading-relaxed">{market.regulatoryNotes}</p>
+        </div>
+      )}
     </div>
   );
 }

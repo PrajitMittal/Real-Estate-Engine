@@ -176,16 +176,22 @@ export default function Step7Decision() {
         </div>
       </div>
 
-      {/* Save */}
+      {/* Actions */}
       <div className="glass-card p-6 space-y-4">
-        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Save Evaluation</h3>
-        <div className="flex gap-3">
-          <input value={saveName} onChange={e => setSaveName(e.target.value)}
-            placeholder={`${state.propertyInput.city || 'Project'} evaluation`}
-            className="flex-1 bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Actions</h3>
+        <div className="flex flex-wrap gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <input value={saveName} onChange={e => setSaveName(e.target.value)}
+              placeholder={`${state.propertyInput.city || 'Project'} evaluation`}
+              className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
           <button onClick={handleSave}
             className={`px-6 py-2 rounded-lg text-sm font-medium transition ${saved ? 'bg-emerald text-white' : 'bg-primary text-white hover:opacity-90'}`}>
-            {saved ? 'Saved ✓' : 'Save'}
+            {saved ? 'Saved' : 'Save'}
+          </button>
+          <button onClick={() => window.print()}
+            className="px-6 py-2 rounded-lg text-sm font-medium bg-secondary text-foreground hover:bg-secondary/80 transition">
+            Export PDF
           </button>
         </div>
       </div>

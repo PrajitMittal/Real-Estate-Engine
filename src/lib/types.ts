@@ -36,6 +36,7 @@ export interface PropertyInput {
   nearestTouristAttraction?: string;
   description?: string;
   photos?: string[]; // base64 or URLs
+  photoAnalysis?: string; // GPT-4V description of uploaded photos
   locationTier?: LocationTier;
 }
 
@@ -63,6 +64,14 @@ export interface MarketResearch {
   risks: string[];
   targetDemographic: string;
   growthTrend: string;
+
+  // Extended analysis (optional — AI may or may not return these)
+  demandSupplyGap?: string;
+  alternativeUseCases?: string[];
+  microMarketTrends?: string[];
+  regulatoryNotes?: string;
+  segmentDemand?: { segment: string; share: number; trend: string }[];
+  comparableTransactions?: { description: string; pricePerSqft: number; date: string }[];
 }
 
 export type ZoProductType =
@@ -78,6 +87,14 @@ export type ZoProductType =
   | 'farm_agritourism'
   | 'glamping';
 
+export interface RoomTypeConfig {
+  name: string;
+  count: number;
+  sqftPerUnit: number;
+  adr: number;
+  occupancy: number;
+}
+
 export interface ProductRecommendation {
   id: string;
   productType: ZoProductType;
@@ -92,6 +109,7 @@ export interface ProductRecommendation {
   constructionCostPerSqft: number;
   reasoning: string;
   buildStyle: BuildStyle;
+  roomTypes?: RoomTypeConfig[];
 }
 
 export interface CapexBreakdown {
@@ -114,11 +132,25 @@ export interface AnnualRevenue {
   totalRevenue: number;
 }
 
+export interface OpExBreakdown {
+  staffSalaries: number;
+  utilities: number;
+  maintenance: number;
+  marketing: number;
+  insurance: number;
+  propertyTax: number;
+  consumables: number;
+  technology: number;
+  miscellaneous: number;
+  totalOpex: number;
+}
+
 export interface FinancialProjection {
   year: number;
   revenue: AnnualRevenue;
   totalRevenue: number;
   opex: number;
+  opexBreakdown: OpExBreakdown;
   zostelCommission: number;
   ebitda: number;
   debtService: number;
@@ -218,6 +250,13 @@ export interface EngineState {
   renders: ConceptRender[];
   viability: ViabilityAssessment | null;
 
+  // Financial assumption overrides
+  overrides?: {
+    adrGrowthRate?: number;
+    opexInflation?: number;
+    discountRate?: number;
+  };
+
   // UI state
   isLoadingMarket: boolean;
   isLoadingRecommendations: boolean;
@@ -245,5 +284,6 @@ export type EngineAction =
   | { type: 'SET_VIABILITY'; data: ViabilityAssessment }
   | { type: 'SET_LOADING'; key: 'isLoadingMarket' | 'isLoadingRecommendations' | 'isLoadingRisks' | 'isLoadingRender'; value: boolean }
   | { type: 'SET_ERROR'; error: string | null }
+  | { type: 'SET_OVERRIDES'; data: EngineState['overrides'] }
   | { type: 'LOAD_STATE'; state: EngineState }
   | { type: 'RESET' };

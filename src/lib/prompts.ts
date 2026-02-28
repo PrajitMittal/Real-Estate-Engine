@@ -18,6 +18,8 @@ PROPERTY DETAILS:
 - Distance to Airport: ${property.distanceToAirport || 'Unknown'} km
 - Description: ${property.description || 'None provided'}
 
+Think broadly and creatively. Don't limit to obvious hospitality uses — consider co-working, F&B, wellness, student housing, corporate retreats, farm stays, event spaces, and any alternative use cases the property could support.
+
 RESEARCH AND RETURN JSON in this exact format (no markdown, no extra text):
 {
   "summary": "2-3 sentence market overview",
@@ -34,11 +36,26 @@ RESEARCH AND RETURN JSON in this exact format (no markdown, no extra text):
   "opportunities": ["opportunity1", "opportunity2"],
   "risks": ["risk1", "risk2"],
   "targetDemographic": "description of target customers",
-  "growthTrend": "growing/stable/declining with context"
+  "growthTrend": "growing/stable/declining with context",
+  "demandSupplyGap": "Analysis of demand vs supply in this micro-market",
+  "alternativeUseCases": ["co-working space", "wellness retreat", "student housing"],
+  "microMarketTrends": ["trend with 2-5 year outlook"],
+  "regulatoryNotes": "Key regulatory considerations for this location",
+  "segmentDemand": [
+    {"segment": "Backpackers", "share": 30, "trend": "growing"},
+    {"segment": "Business travelers", "share": 25, "trend": "stable"}
+  ],
+  "comparableTransactions": [
+    {"description": "Similar property transaction nearby", "pricePerSqft": 25000, "date": "2024-06"}
+  ]
 }
 
 Include at least 5 real competitors with realistic ADR, ratings, and review counts for the area.
 Base seasonality on actual tourism patterns for this specific location.
+Include 3-5 alternative use cases beyond obvious hospitality.
+Include demand-supply gap analysis for the micro-market.
+Include 2-4 segment demand breakdowns with growth trends.
+Include any relevant regulatory notes for this specific city/state.
 All monetary values in INR.`;
 }
 
@@ -128,10 +145,21 @@ RETURN JSON array of risk items (no markdown, no extra text):
 Include 6-10 risks covering different categories. Be specific to ${property.city || 'the location'}, not generic.`;
 }
 
+export interface RenderContext {
+  areaSqft?: number;
+  unitCount?: number;
+  avgSqftPerUnit?: number;
+  buildStyle?: string;
+  terrain?: string;
+  numberOfFloors?: number;
+  photoAnalysis?: string;
+}
+
 export function buildRenderPrompt(
   productType: ZoProductType,
   location: string,
   viewType: 'exterior' | 'interior' | 'aerial',
+  context?: RenderContext,
 ): string {
   const catalog = PRODUCT_CATALOG[productType];
   const styleMap: Record<ZoProductType, string> = {
@@ -154,10 +182,56 @@ export function buildRenderPrompt(
     ? 'interior view showing the designed spaces, furniture, and ambiance'
     : 'exterior architectural view showing the building facade, entrance, and landscaping';
 
-  return `Professional architectural visualization render of a ${catalog?.label || productType} in ${location}, India.
+  // Size-appropriate description
+  const area = context?.areaSqft || 0;
+  const sizeDesc = area <= 2000 ? 'small, intimate'
+    : area <= 5000 ? 'medium-sized, compact'
+    : area <= 15000 ? 'sizeable'
+    : 'large, expansive';
+
+  // Build style guidance
+  const buildStyleDesc: Record<string, string> = {
+    prefab: 'modern industrial-chic prefabricated construction, clean lines, metal and glass',
+    traditional: 'local masonry and traditional construction, regional materials, cultural architecture',
+    renovation: 'blend of restored heritage structure with contemporary additions',
+  };
+
+  // Terrain context
+  const terrainDesc: Record<string, string> = {
+    flat: 'flat terrain',
+    hilly: 'hillside with terraced levels and mountain views',
+    coastal: 'beachfront with sea views and tropical landscaping',
+    forest: 'forest setting with trees and natural surroundings',
+    desert: 'arid desert landscape with earth-tone palette',
+    riverside: 'waterfront property along a river',
+  };
+
+  let prompt = `Professional architectural visualization render of a ${catalog?.label || productType} in ${location}, India.
 ${styleMap[productType]}.
-${viewDesc}.
-Photorealistic, golden hour lighting, warm tones, inviting atmosphere, architectural photography style.
+${viewDesc}.`;
+
+  if (context) {
+    prompt += `\n\nIMPORTANT SCALE CONSTRAINT: This is a ${sizeDesc} property on ${area.toLocaleString()} sqft of land. Do NOT render a palace, grand resort, or massive complex.`;
+    if (context.unitCount) {
+      prompt += ` It has ${context.unitCount} rooms/units, each approximately ${context.avgSqftPerUnit || 150} sqft.`;
+    }
+    if (context.numberOfFloors) {
+      prompt += ` The building is ${context.numberOfFloors} floors tall.`;
+    }
+    if (context.buildStyle && buildStyleDesc[context.buildStyle]) {
+      prompt += `\nBuild style: ${buildStyleDesc[context.buildStyle]}.`;
+    }
+    if (context.terrain && terrainDesc[context.terrain]) {
+      prompt += `\nSetting: ${terrainDesc[context.terrain]}.`;
+    }
+    if (context.photoAnalysis) {
+      prompt += `\nBased on actual site photos: ${context.photoAnalysis}. Match the existing surroundings and architectural context.`;
+    }
+  }
+
+  prompt += `\nPhotorealistic, golden hour lighting, warm tones, inviting atmosphere, architectural photography style.
 Modern Indian hospitality design that blends contemporary style with local cultural elements.
 High quality, 8K, detailed, professional real estate marketing photography.`;
+
+  return prompt;
 }

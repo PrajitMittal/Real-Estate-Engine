@@ -146,3 +146,28 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(241, 88, 36, 0.25);
 }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 640px) {
+  .glass-card:hover {
+    transform: none;
+  }
+  .metric-card {
+    padding: 0.75rem !important;
+  }
+}
+
+/* Scrollable tables on mobile */
+.table-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Print / PDF Export ── */
+@media print {
+  body { background: white !important; }
+  header, nav, footer, .zo-btn { display: none !important; }
+  .glass-card { border: 1px solid #ddd !important; box-shadow: none !important; break-inside: avoid; }
+  .glass-card:hover { transform: none !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+  @page { margin: 1cm; size: A4 portrait; }
+}

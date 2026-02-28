@@ -1,11 +1,16 @@
+import { useRef } from 'react';
 import { useEngine } from '@/hooks/useEngine';
 import { PROPERTY_TYPES, TERRAIN_OPTIONS, LOCATION_TIERS } from '@/lib/constants';
 import { DEMO_STATE } from '@/data/demo';
 import type { PropertyInput } from '@/lib/types';
 
+const MAX_PHOTOS = 5;
+const MAX_SIZE_MB = 5;
+
 export default function Step1Property() {
   const { state, dispatch, recalculate } = useEngine();
   const p = state.propertyInput;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const update = (data: Partial<PropertyInput>) => dispatch({ type: 'SET_PROPERTY', data });
 
@@ -174,6 +179,52 @@ export default function Step1Property() {
           rows={3}
           className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           placeholder="Describe anything about the property — condition, surroundings, history, potential..." />
+      </div>
+
+      {/* Photo Upload */}
+      <div className="glass-card p-6 space-y-4">
+        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Property Photos</h3>
+        <p className="text-xs text-muted-foreground">Upload up to {MAX_PHOTOS} photos ({MAX_SIZE_MB}MB max each). Photos help generate accurate renders.</p>
+        <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
+          onChange={e => {
+            const files = Array.from(e.target.files || []);
+            const existing = p.photos?.length || 0;
+            const allowed = files.slice(0, MAX_PHOTOS - existing);
+            allowed.forEach(file => {
+              if (file.size > MAX_SIZE_MB * 1024 * 1024) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64 = reader.result as string;
+                update({ photos: [...(p.photos || []), base64] });
+              };
+              reader.readAsDataURL(file);
+            });
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }} />
+        <button onClick={() => fileInputRef.current?.click()}
+          disabled={(p.photos?.length || 0) >= MAX_PHOTOS}
+          className="px-4 py-2 rounded-lg bg-secondary text-sm hover:bg-secondary/80 transition disabled:opacity-50">
+          + Add Photos
+        </button>
+        {p.photos && p.photos.length > 0 && (
+          <div className="flex flex-wrap gap-3 mt-3">
+            {p.photos.map((photo, i) => (
+              <div key={i} className="relative group">
+                <img src={photo} alt={`Property ${i + 1}`}
+                  className="w-20 h-20 rounded-lg object-cover border border-border" />
+                <button onClick={() => update({ photos: p.photos!.filter((_, j) => j !== i) })}
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                  x
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {p.photoAnalysis && (
+          <div className="bg-cyan/10 rounded-lg p-3 text-xs text-cyan">
+            <span className="font-medium">AI Analysis:</span> {p.photoAnalysis}
+          </div>
+        )}
       </div>
 
       {/* Summary card */}

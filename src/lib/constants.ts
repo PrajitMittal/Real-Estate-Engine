@@ -2,7 +2,7 @@
 // Zo Real Estate Engine — Product Catalog & Benchmarks
 // ============================================
 
-import type { ZoProductType, LocationTier, BuildStyle } from './types';
+import type { ZoProductType, LocationTier, BuildStyle, RoomTypeConfig } from './types';
 
 export const PRODUCT_CATALOG: Record<ZoProductType, {
   label: string;
@@ -272,6 +272,64 @@ export const TERRAIN_OPTIONS: { value: string; label: string }[] = [
   { value: 'desert', label: 'Desert / Arid' },
   { value: 'riverside', label: 'Riverside / Waterfront' },
 ];
+
+// OpEx sub-ratios per product type — each sums to the product's opexRatio
+export const OPEX_BREAKDOWN: Record<ZoProductType, {
+  staffSalaries: number;
+  utilities: number;
+  maintenance: number;
+  marketing: number;
+  insurance: number;
+  propertyTax: number;
+  consumables: number;
+  technology: number;
+  miscellaneous: number;
+}> = {
+  zostel:          { staffSalaries: 0.14, utilities: 0.05, maintenance: 0.04, marketing: 0.06, insurance: 0.02, propertyTax: 0.02, consumables: 0.04, technology: 0.02, miscellaneous: 0.03 }, // 0.42
+  zostel_plus:     { staffSalaries: 0.15, utilities: 0.06, maintenance: 0.05, marketing: 0.06, insurance: 0.02, propertyTax: 0.02, consumables: 0.04, technology: 0.02, miscellaneous: 0.03 }, // 0.45
+  zostel_home:     { staffSalaries: 0.10, utilities: 0.04, maintenance: 0.04, marketing: 0.05, insurance: 0.02, propertyTax: 0.02, consumables: 0.03, technology: 0.02, miscellaneous: 0.03 }, // 0.35
+  zo_house:        { staffSalaries: 0.13, utilities: 0.05, maintenance: 0.04, marketing: 0.05, insurance: 0.02, propertyTax: 0.02, consumables: 0.04, technology: 0.02, miscellaneous: 0.03 }, // 0.40
+  zo_villa:        { staffSalaries: 0.16, utilities: 0.06, maintenance: 0.06, marketing: 0.06, insurance: 0.03, propertyTax: 0.03, consumables: 0.04, technology: 0.02, miscellaneous: 0.04 }, // 0.50
+  zo_selections:   { staffSalaries: 0.18, utilities: 0.07, maintenance: 0.06, marketing: 0.07, insurance: 0.03, propertyTax: 0.03, consumables: 0.05, technology: 0.02, miscellaneous: 0.04 }, // 0.55
+  event_space:     { staffSalaries: 0.10, utilities: 0.04, maintenance: 0.03, marketing: 0.04, insurance: 0.02, propertyTax: 0.02, consumables: 0.02, technology: 0.01, miscellaneous: 0.02 }, // 0.30
+  coworking:       { staffSalaries: 0.08, utilities: 0.05, maintenance: 0.03, marketing: 0.04, insurance: 0.02, propertyTax: 0.02, consumables: 0.02, technology: 0.02, miscellaneous: 0.02 }, // 0.30
+  restaurant_bar:  { staffSalaries: 0.20, utilities: 0.06, maintenance: 0.05, marketing: 0.06, insurance: 0.03, propertyTax: 0.02, consumables: 0.10, technology: 0.02, miscellaneous: 0.06 }, // 0.60
+  farm_agritourism:{ staffSalaries: 0.12, utilities: 0.04, maintenance: 0.04, marketing: 0.05, insurance: 0.02, propertyTax: 0.02, consumables: 0.04, technology: 0.02, miscellaneous: 0.03 }, // 0.38
+  glamping:        { staffSalaries: 0.10, utilities: 0.04, maintenance: 0.05, marketing: 0.05, insurance: 0.02, propertyTax: 0.02, consumables: 0.03, technology: 0.01, miscellaneous: 0.03 }, // 0.35
+};
+
+// Default room types for hostel/hospitality products
+export const DEFAULT_ROOM_TYPES: Partial<Record<ZoProductType, RoomTypeConfig[]>> = {
+  zostel: [
+    { name: '8-Bed Dorm', count: 6, sqftPerUnit: 80, adr: 600, occupancy: 75 },
+    { name: '4-Bed Dorm', count: 3, sqftPerUnit: 100, adr: 900, occupancy: 70 },
+    { name: 'Private Double', count: 2, sqftPerUnit: 200, adr: 1800, occupancy: 65 },
+  ],
+  zostel_plus: [
+    { name: '4-Bed Dorm', count: 4, sqftPerUnit: 120, adr: 1200, occupancy: 70 },
+    { name: 'Private Double', count: 5, sqftPerUnit: 200, adr: 2500, occupancy: 68 },
+    { name: 'Suite', count: 3, sqftPerUnit: 350, adr: 4000, occupancy: 60 },
+  ],
+  zo_house: [
+    { name: 'Shared Bunk', count: 5, sqftPerUnit: 80, adr: 800, occupancy: 80 },
+    { name: 'Private Room', count: 4, sqftPerUnit: 180, adr: 1500, occupancy: 75 },
+    { name: 'Studio', count: 2, sqftPerUnit: 300, adr: 2500, occupancy: 70 },
+  ],
+  zo_selections: [
+    { name: 'Deluxe Room', count: 6, sqftPerUnit: 250, adr: 4000, occupancy: 65 },
+    { name: 'Premium Suite', count: 3, sqftPerUnit: 400, adr: 6000, occupancy: 58 },
+    { name: 'Grand Suite', count: 1, sqftPerUnit: 600, adr: 10000, occupancy: 45 },
+  ],
+  zostel_home: [
+    { name: 'Standard Room', count: 2, sqftPerUnit: 300, adr: 2500, occupancy: 58 },
+    { name: 'Family Room', count: 1, sqftPerUnit: 500, adr: 4000, occupancy: 50 },
+  ],
+  glamping: [
+    { name: 'Bell Tent', count: 4, sqftPerUnit: 200, adr: 3500, occupancy: 45 },
+    { name: 'Dome', count: 3, sqftPerUnit: 250, adr: 5000, occupancy: 40 },
+    { name: 'Treehouse', count: 1, sqftPerUnit: 350, adr: 7000, occupancy: 35 },
+  ],
+};
 
 export const WIZARD_STEPS = [
   { id: 1, label: 'Property', icon: '📍' },

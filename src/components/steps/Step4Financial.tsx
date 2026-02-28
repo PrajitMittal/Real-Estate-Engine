@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { useEngine } from '@/hooks/useEngine';
-import { formatINR, formatPercent, formatYears } from '@/lib/constants';
+import { formatINR, formatPercent, formatYears, ADR_GROWTH_RATE, OPEX_INFLATION, DISCOUNT_RATE, APPROVAL_COST_PERCENT, CONTINGENCY_PERCENT } from '@/lib/constants';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
-const COLORS = ['#f15824', '#33CCCC', '#00AA77', '#FFAA00', '#FF0066', '#FF5500', '#9955CC'];
+const COLORS = ['#f15824', '#33CCCC', '#00AA77', '#FFAA00', '#FF0066', '#FF5500', '#9955CC', '#FF8844', '#66BBAA'];
 
 type Tab = 'pnl' | 'scenarios' | 'leaseback' | 'debt';
 
 export default function Step4Financial() {
-  const { state, recalculate, calculateDebt } = useEngine();
+  const { state, dispatch, recalculate, calculateDebt } = useEngine();
   const [tab, setTab] = useState<Tab>('pnl');
   const [ltvRatio, setLtvRatio] = useState(0.6);
   const [intRate, setIntRate] = useState(0.10);
   const [tenure, setTenure] = useState(10);
+  const [showAssumptions, setShowAssumptions] = useState(false);
+  const [detailedOpex, setDetailedOpex] = useState(false);
 
   const fin = state.financials;
   const capex = state.capex;
@@ -86,8 +88,50 @@ export default function Step4Financial() {
         ))}
       </div>
 
+      {/* Assumptions Panel — Editable */}
+      <div className="glass-card p-4">
+        <button onClick={() => setShowAssumptions(!showAssumptions)}
+          className="flex items-center justify-between w-full text-sm">
+          <span className="font-medium text-muted-foreground">Model Assumptions</span>
+          <span className="text-xs text-primary">{showAssumptions ? 'Hide' : 'Show'}</span>
+        </button>
+        {showAssumptions && (
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <label className="text-muted-foreground block mb-1">ADR Growth (% / yr)</label>
+              <input type="number" step="0.5" min={0} max={25}
+                value={((state.overrides?.adrGrowthRate ?? ADR_GROWTH_RATE) * 100).toFixed(1)}
+                onChange={e => dispatch({ type: 'SET_OVERRIDES', data: { adrGrowthRate: Number(e.target.value) / 100 } })}
+                className="w-full bg-input border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <label className="text-muted-foreground block mb-1">OpEx Inflation (% / yr)</label>
+              <input type="number" step="0.5" min={0} max={20}
+                value={((state.overrides?.opexInflation ?? OPEX_INFLATION) * 100).toFixed(1)}
+                onChange={e => dispatch({ type: 'SET_OVERRIDES', data: { opexInflation: Number(e.target.value) / 100 } })}
+                className="w-full bg-input border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <label className="text-muted-foreground block mb-1">Discount Rate (%)</label>
+              <input type="number" step="0.5" min={1} max={30}
+                value={((state.overrides?.discountRate ?? DISCOUNT_RATE) * 100).toFixed(1)}
+                onChange={e => dispatch({ type: 'SET_OVERRIDES', data: { discountRate: Number(e.target.value) / 100 } })}
+                className="w-full bg-input border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <p className="text-muted-foreground">Approval Costs</p>
+              <p className="font-medium mt-1">{(APPROVAL_COST_PERCENT * 100).toFixed(0)}% of construction</p>
+            </div>
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <p className="text-muted-foreground">Contingency</p>
+              <p className="font-medium mt-1">{(CONTINGENCY_PERCENT * 100).toFixed(0)}% of subtotal</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-1 bg-secondary rounded-lg p-1">
+      <div className="flex gap-1 bg-secondary rounded-lg p-1 overflow-x-auto">
         {([
           { id: 'pnl', label: 'P&L Projection' },
           { id: 'scenarios', label: 'Scenarios' },
@@ -159,27 +203,63 @@ export default function Step4Financial() {
 
           {/* Projection Table */}
           <div className="glass-card p-6 overflow-x-auto">
-            <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">10-Year Projection</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">10-Year Projection</h3>
+              <button onClick={() => setDetailedOpex(!detailedOpex)}
+                className={`px-3 py-1 rounded text-xs transition ${detailedOpex ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                {detailedOpex ? 'Simple View' : 'Detailed OpEx'}
+              </button>
+            </div>
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-muted-foreground border-b border-border">
-                  <th className="text-left py-2 pr-4">Year</th>
-                  <th className="text-right py-2 px-2">Revenue</th>
-                  <th className="text-right py-2 px-2">OpEx</th>
-                  <th className="text-right py-2 px-2">EBITDA</th>
-                  <th className="text-right py-2 px-2">Net CF</th>
-                  <th className="text-right py-2 pl-2">Cumulative</th>
+                  <th className="text-left py-2 pr-4 whitespace-nowrap">Year</th>
+                  <th className="text-right py-2 px-2 whitespace-nowrap">Revenue</th>
+                  {detailedOpex ? (
+                    <>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Staff</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Utilities</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Maint.</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Marketing</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Insurance</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Tax</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Consumables</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Tech</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap">Misc</th>
+                      <th className="text-right py-2 px-2 whitespace-nowrap font-semibold">Total OpEx</th>
+                    </>
+                  ) : (
+                    <th className="text-right py-2 px-2 whitespace-nowrap">OpEx</th>
+                  )}
+                  <th className="text-right py-2 px-2 whitespace-nowrap">EBITDA</th>
+                  <th className="text-right py-2 px-2 whitespace-nowrap">Net CF</th>
+                  <th className="text-right py-2 pl-2 whitespace-nowrap">Cumulative</th>
                 </tr>
               </thead>
               <tbody>
                 {base.projections.map(p => (
                   <tr key={p.year} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-medium">Y{p.year}</td>
-                    <td className="text-right py-2 px-2">{formatINR(p.totalRevenue)}</td>
-                    <td className="text-right py-2 px-2 text-rose">{formatINR(p.opex)}</td>
-                    <td className="text-right py-2 px-2 text-emerald">{formatINR(p.ebitda)}</td>
-                    <td className="text-right py-2 px-2">{formatINR(p.netCashflow)}</td>
-                    <td className={`text-right py-2 pl-2 font-medium ${p.cumulativeCashflow >= 0 ? 'text-emerald' : 'text-rose'}`}>
+                    <td className="py-2 pr-4 font-medium whitespace-nowrap">Y{p.year}</td>
+                    <td className="text-right py-2 px-2 whitespace-nowrap">{formatINR(p.totalRevenue)}</td>
+                    {detailedOpex ? (
+                      <>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.staffSalaries)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.utilities)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.maintenance)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.marketing)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.insurance)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.propertyTax)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.consumables)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.technology)}</td>
+                        <td className="text-right py-2 px-2 text-rose/70 whitespace-nowrap">{formatINR(p.opexBreakdown.miscellaneous)}</td>
+                        <td className="text-right py-2 px-2 text-rose font-medium whitespace-nowrap">{formatINR(p.opex)}</td>
+                      </>
+                    ) : (
+                      <td className="text-right py-2 px-2 text-rose whitespace-nowrap">{formatINR(p.opex)}</td>
+                    )}
+                    <td className="text-right py-2 px-2 text-emerald whitespace-nowrap">{formatINR(p.ebitda)}</td>
+                    <td className="text-right py-2 px-2 whitespace-nowrap">{formatINR(p.netCashflow)}</td>
+                    <td className={`text-right py-2 pl-2 font-medium whitespace-nowrap ${p.cumulativeCashflow >= 0 ? 'text-emerald' : 'text-rose'}`}>
                       {formatINR(p.cumulativeCashflow)}
                     </td>
                   </tr>
@@ -290,8 +370,20 @@ export default function Step4Financial() {
               </div>
               <div className="glass-card p-4 metric-card">
                 <p className="text-xs text-muted-foreground">DSCR</p>
-                <p className={`text-xl font-bold mt-1 ${state.debt.dscr > 1.5 ? 'text-emerald' : 'text-rose'}`}>{state.debt.dscr === Infinity ? '∞' : state.debt.dscr.toFixed(2)}x</p>
+                <p className={`text-xl font-bold mt-1 ${state.debt.dscr > 1.5 ? 'text-emerald' : state.debt.dscr > 1.2 ? 'text-amber' : 'text-rose'}`}>
+                  {state.debt.dscr === Infinity ? 'N/A (no debt)' : `${state.debt.dscr.toFixed(2)}x`}
+                </p>
               </div>
+            </div>
+          )}
+
+          {state.debt && state.debt.dscr !== Infinity && state.debt.dscr < 1.2 && (
+            <div className="glass-card p-4 border border-rose/50 bg-rose/5">
+              <p className="text-sm text-rose font-medium">DSCR below 1.2x</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Most lenders require a minimum DSCR of 1.2x. This debt structure may not be bankable.
+                Consider reducing LTV ratio or extending tenure.
+              </p>
             </div>
           )}
         </div>
