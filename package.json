@@ -8,7 +8,8 @@
     "server": "tsx server/index.ts",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "push": "git add -A && git commit -m \"update\" && git push origin main"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
