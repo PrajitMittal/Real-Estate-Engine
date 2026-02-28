@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0f;
+  --color-foreground: #e8e8ed;
+  --color-card: #12121a;
+  --color-card-foreground: #e8e8ed;
+  --color-primary: #6366f1;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1e1e2e;
+  --color-secondary-foreground: #a1a1b5;
+  --color-muted: #1a1a28;
+  --color-muted-foreground: #71717a;
+  --color-accent: #6366f1;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-border: #2a2a3c;
+  --color-input: #1e1e2e;
+  --color-ring: #6366f1;
+
+  --color-emerald: #10b981;
+  --color-amber: #f59e0b;
+  --color-rose: #f43f5e;
+  --color-cyan: #06b6d4;
+  --color-violet: #8b5cf6;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+}
+
+* {
+  border-color: var(--color-border);
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-background); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeIn 0.3s ease-out forwards; }
+
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background: rgba(18, 18, 26, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.metric-card {
+  position: relative;
+  overflow: hidden;
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-cyan));
+}
+
+.badge-excellent { background: #10b981; color: white; }
+.badge-good { background: #6366f1; color: white; }
+.badge-moderate { background: #f59e0b; color: black; }
+.badge-poor { background: #ef4444; color: white; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(99, 102, 241, 0.2); }
+}
+.loading-pulse { animation: pulse-glow 2s ease-in-out infinite; }
