@@ -116,14 +116,14 @@ export default function Step2Market() {
             <AreaChart data={seasonData}>
               <defs>
                 <linearGradient id="occGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#f15824" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f15824" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#71717a' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#71717a' }} domain={[0, 100]} />
-              <Tooltip contentStyle={{ background: '#12121a', border: '1px solid #2a2a3c', borderRadius: 8, fontSize: 12 }} />
-              <Area type="monotone" dataKey="occupancy" stroke="#6366f1" fill="url(#occGrad)" strokeWidth={2} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8a8578' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#8a8578' }} domain={[0, 100]} />
+              <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
+              <Area type="monotone" dataKey="occupancy" stroke="#f15824" fill="url(#occGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

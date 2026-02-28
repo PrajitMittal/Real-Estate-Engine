@@ -30,12 +30,12 @@ function App() {
       <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white text-sm">
+            <div className="w-9 h-9 rounded-lg gradient-brand flex items-center justify-center font-bold text-white text-sm tracking-tight shadow-lg shadow-primary/20">
               Zo
             </div>
             <div>
-              <h1 className="text-lg font-bold gradient-text">Real Estate Engine</h1>
-              <p className="text-xs text-muted-foreground">Property Intelligence Platform</p>
+              <h1 className="text-lg font-bold gradient-text tracking-wide">Real Estate Engine</h1>
+              <p className="text-xs text-muted-foreground tracking-wider uppercase">by Zo World</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

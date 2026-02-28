@@ -35,7 +35,7 @@ export default function Step7Decision() {
 
   const ratingColors: Record<string, string> = {
     excellent: 'from-emerald to-cyan',
-    good: 'from-primary to-violet',
+    good: 'from-primary to-amber',
     moderate: 'from-amber to-orange-500',
     poor: 'from-rose to-red-700',
   };

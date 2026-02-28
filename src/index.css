@@ -1,30 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0a0a0f;
-  --color-foreground: #e8e8ed;
-  --color-card: #12121a;
-  --color-card-foreground: #e8e8ed;
-  --color-primary: #6366f1;
+  /* ── Zostel Brand Colors ── */
+  --color-background: #111111;
+  --color-foreground: #F0EDDE;
+  --color-card: #1a1a1a;
+  --color-card-foreground: #F0EDDE;
+  --color-primary: #f15824;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #1e1e2e;
-  --color-secondary-foreground: #a1a1b5;
-  --color-muted: #1a1a28;
-  --color-muted-foreground: #71717a;
-  --color-accent: #6366f1;
+  --color-secondary: #242424;
+  --color-secondary-foreground: #b5b0a0;
+  --color-muted: #1e1e1e;
+  --color-muted-foreground: #8a8578;
+  --color-accent: #f15824;
   --color-accent-foreground: #ffffff;
-  --color-destructive: #ef4444;
-  --color-border: #2a2a3c;
-  --color-input: #1e1e2e;
-  --color-ring: #6366f1;
+  --color-destructive: #FF0066;
+  --color-border: #333333;
+  --color-input: #242424;
+  --color-ring: #f15824;
 
-  --color-emerald: #10b981;
-  --color-amber: #f59e0b;
-  --color-rose: #f43f5e;
-  --color-cyan: #06b6d4;
-  --color-violet: #8b5cf6;
+  /* ── Zostel Palette ── */
+  --color-emerald: #00AA77;
+  --color-amber: #FFAA00;
+  --color-rose: #FF0066;
+  --color-cyan: #33CCCC;
+  --color-violet: #FF5500;
+  --color-orange: #f15824;
+  --color-beige: #F0EDDE;
+  --color-steel: #2b2b2a;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* ── Typography: Futura ── */
+  --font-sans: 'Futura', 'Century Gothic', 'Verdana', system-ui, sans-serif;
   --radius-lg: 12px;
   --radius-md: 8px;
   --radius-sm: 6px;
@@ -47,30 +53,66 @@ body {
   min-height: 100vh;
 }
 
+::selection {
+  background-color: #f15824;
+  color: #FFFFFF;
+}
+
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-background); }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #f15824; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #FF5500; }
 
+/* ── Animations ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-in { animation: fadeIn 0.3s ease-out forwards; }
 
+@keyframes zostelFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.zo-float { animation: zostelFloat 3s ease-in-out infinite; }
+
+@keyframes zostelPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.zo-pulse { animation: zostelPulse 2s ease-in-out infinite; }
+
+/* ── Brand Gradients ── */
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  background: linear-gradient(135deg, #f15824, #FFAA00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+.gradient-sunset {
+  background: linear-gradient(135deg, #FFAA00, #f15824, #FF0066);
+}
+
+.gradient-brand {
+  background: linear-gradient(135deg, #f15824, #FF5500);
+}
+
+/* ── Glass Card ── */
 .glass-card {
-  background: rgba(18, 18, 26, 0.8);
+  background: rgba(26, 26, 26, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(241, 88, 36, 0.08);
+}
+
+/* ── Metric Card ── */
 .metric-card {
   position: relative;
   overflow: hidden;
@@ -80,16 +122,27 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-cyan));
+  background: linear-gradient(90deg, #f15824, #FFAA00);
 }
 
-.badge-excellent { background: #10b981; color: white; }
-.badge-good { background: #6366f1; color: white; }
-.badge-moderate { background: #f59e0b; color: black; }
-.badge-poor { background: #ef4444; color: white; }
+/* ── Badges ── */
+.badge-excellent { background: #00AA77; color: white; }
+.badge-good { background: #f15824; color: white; }
+.badge-moderate { background: #FFAA00; color: black; }
+.badge-poor { background: #FF0066; color: white; }
 
+/* ── Loading Pulse ── */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-  50% { box-shadow: 0 0 20px 5px rgba(99, 102, 241, 0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(241, 88, 36, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(241, 88, 36, 0.15); }
 }
 .loading-pulse { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* ── Zostel Button Hover ── */
+.zo-btn {
+  transition: all 0.2s ease;
+}
+.zo-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(241, 88, 36, 0.3);
+}

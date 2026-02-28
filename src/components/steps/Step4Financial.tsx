@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
-const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#ec4899'];
+const COLORS = ['#f15824', '#33CCCC', '#00AA77', '#FFAA00', '#FF0066', '#FF5500', '#9955CC'];
 
 type Tab = 'pnl' | 'scenarios' | 'leaseback' | 'debt';
 
@@ -117,9 +117,9 @@ export default function Step4Financial() {
                       </linearGradient>
                     ))}
                   </defs>
-                  <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#71717a' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#71717a' }} />
-                  <Tooltip contentStyle={{ background: '#12121a', border: '1px solid #2a2a3c', borderRadius: 8, fontSize: 12 }} />
+                  <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#8a8578' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#8a8578' }} />
+                  <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
                   <Legend />
                   {['Hospitality', 'F&B', 'Events', 'Co-working'].map((key, i) => (
                     <Area key={key} type="monotone" dataKey={key} stackId="1" stroke={COLORS[i]} fill={`url(#grad-${key})`} />
@@ -139,7 +139,7 @@ export default function Step4Financial() {
                     <Pie data={capexData} cx="50%" cy="50%" innerRadius={40} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                       {capexData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(value: number) => formatINR(value)} contentStyle={{ background: '#12121a', border: '1px solid #2a2a3c', borderRadius: 8, fontSize: 12 }} />
+                    <Tooltip formatter={(value: number) => formatINR(value)} contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -213,13 +213,13 @@ export default function Step4Financial() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={scenarioData}>
-                  <XAxis dataKey="metric" tick={{ fontSize: 11, fill: '#71717a' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#71717a' }} />
-                  <Tooltip contentStyle={{ background: '#12121a', border: '1px solid #2a2a3c', borderRadius: 8, fontSize: 12 }} />
+                  <XAxis dataKey="metric" tick={{ fontSize: 11, fill: '#8a8578' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#8a8578' }} />
+                  <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
                   <Legend />
-                  <Bar dataKey="Bear" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Base" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Bull" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Bear" fill="#FF0066" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Base" fill="#f15824" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Bull" fill="#00AA77" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

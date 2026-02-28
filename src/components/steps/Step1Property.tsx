@@ -25,7 +25,7 @@ export default function Step1Property() {
           <h2 className="text-2xl font-bold">Property Brief</h2>
           <p className="text-muted-foreground text-sm mt-1">Enter what you know — we'll figure out the rest</p>
         </div>
-        <button onClick={loadDemo} className="px-4 py-2 rounded-lg bg-violet text-white text-sm hover:opacity-90 transition">
+        <button onClick={loadDemo} className="px-4 py-2 rounded-lg gradient-brand text-white text-sm hover:opacity-90 transition zo-btn">
           Load Demo (Gurgaon)
         </button>
       </div>

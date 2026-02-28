@@ -67,7 +67,7 @@ export default function Step3Product() {
         </div>
         <div className="flex gap-2">
           {state.marketResearch && (
-            <button onClick={runRecommendation} className="px-4 py-2 rounded-lg bg-violet text-white text-sm hover:opacity-90 transition">
+            <button onClick={runRecommendation} className="px-4 py-2 rounded-lg gradient-brand text-white text-sm hover:opacity-90 transition zo-btn">
               AI Recommend
             </button>
           )}
