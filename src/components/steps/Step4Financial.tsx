@@ -119,7 +119,7 @@ export default function Step4Financial() {
                   </defs>
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#8a8578' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#8a8578' }} />
-                  <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E2D8', color: '#2b2b2a', borderRadius: 8, fontSize: 12 }} />
                   <Legend />
                   {['Hospitality', 'F&B', 'Events', 'Co-working'].map((key, i) => (
                     <Area key={key} type="monotone" dataKey={key} stackId="1" stroke={COLORS[i]} fill={`url(#grad-${key})`} />
@@ -139,7 +139,7 @@ export default function Step4Financial() {
                     <Pie data={capexData} cx="50%" cy="50%" innerRadius={40} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                       {capexData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(value: number) => formatINR(value)} contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
+                    <Tooltip formatter={(value: number) => formatINR(value)} contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E2D8', color: '#2b2b2a', borderRadius: 8, fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -215,7 +215,7 @@ export default function Step4Financial() {
                 <BarChart data={scenarioData}>
                   <XAxis dataKey="metric" tick={{ fontSize: 11, fill: '#8a8578' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#8a8578' }} />
-                  <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E2D8', color: '#2b2b2a', borderRadius: 8, fontSize: 12 }} />
                   <Legend />
                   <Bar dataKey="Bear" fill="#FF0066" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Base" fill="#f15824" radius={[4, 4, 0, 0]} />

@@ -69,7 +69,7 @@ export default function Step5Risk() {
       <div className="glass-card p-6 flex items-center gap-6">
         <div className="relative w-24 h-24">
           <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="#242424" strokeWidth="8" />
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E2D8" strokeWidth="8" />
             <circle cx="50" cy="50" r="40" fill="none"
               stroke={risks.overallScore < 25 ? '#10b981' : risks.overallScore < 50 ? '#f59e0b' : risks.overallScore < 75 ? '#f97316' : '#ef4444'}
               strokeWidth="8" strokeDasharray={`${risks.overallScore * 2.51} 251`} strokeLinecap="round" />

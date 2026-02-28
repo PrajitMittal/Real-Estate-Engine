@@ -122,7 +122,7 @@ export default function Step2Market() {
               </defs>
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8a8578' }} />
               <YAxis tick={{ fontSize: 11, fill: '#8a8578' }} domain={[0, 100]} />
-              <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333333', borderRadius: 8, fontSize: 12 }} />
+              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E2D8', color: '#2b2b2a', borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="occupancy" stroke="#f15824" fill="url(#occGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
